@@ -1,20 +1,19 @@
 import tkinter
-import threading
-import time
 import PIL
 import PIL.ImageGrab
+import time
 
-__all__ = ["get_coords", "engage_picker"]
+__all__ = ["get_coords", "open_picker"]
 
-coords = (0, 0, 100, 100)
+coords = None
 
 
 def get_coords():
     return coords
 
 
-def engage_picker():
-    win = tkinter.Tk()
+def open_picker():
+    win = tkinter.Tk("Screen area picker")
     win.geometry("400x400")
     win.attributes("-alpha", 0.6)
     win.wm_attributes("-topmost", 1)
@@ -30,12 +29,13 @@ def engage_picker():
         win.destroy()
 
     win.protocol("WM_DELETE_WINDOW", save_coords)
-    win.mainloop()
-    return coords
+    return win
 
 
 def main():
-    engage_picker()
+    open_picker()
+    while coords is None:
+        time.sleep(1)
     im = PIL.ImageGrab.grab(coords)
     im.save("test_window.png")
 

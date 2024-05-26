@@ -26,7 +26,7 @@ def extract_pokemon(word):
     res = best_candidate if best_candidate[0] >= SIMILARITY_THRESHOLD else None
 
     if res is None and best_candidate[0] > SIMILARITY_THRESHOLD - 0.2:
-        logging.debug(best_candidate)
+        logging.debug(f"{word}: {best_candidate}")
 
     return res
 
