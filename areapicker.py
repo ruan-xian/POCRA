@@ -14,7 +14,8 @@ def get_coords():
 
 def open_picker():
     win = tkinter.Tk("Screen area picker")
-    win.geometry("400x400")
+    win.title("Close this window to select the OCR area")
+    win.geometry("600x300")
     win.attributes("-alpha", 0.6)
     win.wm_attributes("-topmost", 1)
 

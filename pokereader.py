@@ -3,26 +3,32 @@ from PIL import Image
 from PIL import ImageFilter
 import pandas as pd
 import textdistance
-import tkinter
 import logging
 
 __all__ = ["extract_pokemon", "recognize_pokemon", "get_api", "pkmn_list", "preprocess"]
 
-df = pd.read_csv(r"Pokemon.csv")
-pkmn_list = df["Name"].tolist()
+with open("pokemon_list.json") as f:
+    pkmn_list = pd.read_json(f).values.flatten().tolist()
 
 BW_THRESHOLD = 240
 lut = [0 if x > BW_THRESHOLD else 255 for x in range(256)]
+inverted_lut = [0 if x < 255 - BW_THRESHOLD else 255 for x in range(256)]
 
-SIMILARITY_THRESHOLD = 0.68
+SIMILARITY_THRESHOLD = 0.55
+BLACKLIST = ["Revive", "Ether", "Potion", "Super Potion", "Full Heal", "Lure"]
 
 
 def extract_pokemon(word):
-    best_candidate = (0, "placeholder")
+    best_candidate = (0, "Placeholder")
     for candidate in pkmn_list:
         dist = textdistance.levenshtein.normalized_similarity(word, candidate)
         if dist > best_candidate[0]:
             best_candidate = (dist, candidate)
+    for candidate in BLACKLIST:
+        dist = textdistance.levenshtein.normalized_similarity(word, candidate)
+        if dist > best_candidate[0] and dist > SIMILARITY_THRESHOLD:
+            logging.debug(f"Skipped blacklisted word {candidate} (input: {word})")
+            return None
     res = best_candidate if best_candidate[0] >= SIMILARITY_THRESHOLD else None
 
     if res is None and best_candidate[0] > SIMILARITY_THRESHOLD - 0.2:
@@ -58,9 +64,10 @@ def get_api():
     )
 
 
-def preprocess(image):
-    im2 = image.convert("L").point(lut)
+def preprocess(image, invert=False):
+    im2 = image.convert("L").point(lut if not invert else inverted_lut)
     im2 = im2.filter(ImageFilter.SMOOTH)
+    im2 = im2.resize((im2.width * 2, im2.height * 2), Image.LANCZOS)
     return im2
 
 
