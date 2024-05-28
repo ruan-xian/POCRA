@@ -16,6 +16,7 @@ __all__ = [
     "preprocess",
     "get_boxes",
     "process_user_blacklist",
+    "preprocess_settings",
 ]
 
 names_path = path.abspath(path.join(path.dirname(__file__), "pokemon_names.json"))
@@ -25,15 +26,50 @@ with io.open(names_path, encoding="utf8") as f:
 # print("".join(sorted(charset)))
 charset_string = " '-.2:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzé♀♂"
 
-BW_THRESHOLD = 240
-INV_BW_THRESHOLD = 75
-LAX_THRESHOLD = 175
-INV_LAX_THRESHOLD = 80
 
-lut = [0 if x > BW_THRESHOLD else 255 for x in range(256)]
-inverted_lut = [0 if x < INV_BW_THRESHOLD else 255 for x in range(256)]
-lax_lut = [0 if x < LAX_THRESHOLD else 255 for x in range(256)]
-lax_inverted_lut = [0 if x > INV_LAX_THRESHOLD else 255 for x in range(256)]
+class PreprocessSettings:
+    def __init__(
+        self, bw_thresh, inv_bw_thresh, invert, resize_factor, blur_size, minfilter_size
+    ):
+        self.bw_threshold = bw_thresh
+        self.inv_bw_threshold = inv_bw_thresh
+        self.invert = invert
+        self.resize_factor = resize_factor
+        self.blur_size = blur_size
+        self.minfilter_size = minfilter_size
+
+        self.lut = []
+        self.inverted_lut = []
+        self.update_lut()
+
+    def update_lut(self):
+        self.lut = [0 if x > self.bw_threshold else 255 for x in range(256)]
+        inverted_lut = [0 if x < self.inv_bw_threshold else 255 for x in range(256)]
+
+
+preprocess_settings = PreprocessSettings(
+    bw_thresh=240,
+    inv_bw_thresh=75,
+    invert=False,
+    resize_factor=1,
+    blur_size=0,
+    minfilter_size=3,
+)
+
+
+def preprocess(image):
+    pps = preprocess_settings
+    im2 = image.convert("L").point(pps.lut if not pps.invert else pps.inverted_lut)
+    im2 = im2.resize(
+        ((int)(im2.width * pps.resize_factor), (int)(im2.height * pps.resize_factor)),
+        Image.LANCZOS,
+    )
+    if pps.blur_size > 0:
+        im2 = im2.filter(ImageFilter.GaussianBlur(pps.blur_size))
+    if pps.minfilter_size > 1:
+        im2 = im2.filter(ImageFilter.MinFilter(pps.minfilter_size))
+    return im2
+
 
 SIMILARITY_THRESHOLD = 0.55
 BLACKLIST = ["Revive", "Ether", "Potion", "Super Potion", "Full Heal", "Lure"]
@@ -116,7 +152,7 @@ def get_boxes(image, api):
             fill="red",
             align="center",
             anchor="md",
-            font_size=50,
+            font_size=25 * preprocess_settings.resize_factor,
         )
 
     return boxed_image
@@ -132,18 +168,11 @@ def get_api():
     return api
 
 
-def preprocess(image, invert=False):
-    im2 = image.convert("L").point(lut if not invert else inverted_lut)
-    im2 = im2.resize((im2.width * 2, im2.height * 2), Image.LANCZOS)
-    im2 = im2.filter(ImageFilter.GaussianBlur(2))
-    return im2
-
-
 def main():
 
     # preprocess image
 
-    im = Image.open(r"sample4.png")
+    im = Image.open(r"samples/sample4.png")
     im = preprocess(im)
 
     with get_api() as api:

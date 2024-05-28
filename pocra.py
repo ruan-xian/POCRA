@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 import sv_ttk
 import threading
+from copy import copy
 
 loglevel = logging.WARNING
 
@@ -49,23 +50,144 @@ auto_open_toggle = ttk.Checkbutton(
 )
 auto_open_toggle.pack(fill=tk.X)
 
-invert_text_value = tk.BooleanVar()
-invert_text_value.set(False)
-invert_text_toggle = ttk.Checkbutton(
-    left_frame, text="Invert OCR text color", variable=invert_text_value
+
+def open_preprocess_settings():
+    ppw = tk.Toplevel(root)
+    ppw.title("Preprocessing settings")
+    ppw.wm_attributes("-topmost", 1)
+
+    ppw.columnconfigure(0, weight=2)
+    ppw.columnconfigure(1, weight=8)
+
+    before_settings = copy(preprocess_settings)
+
+    # has to be defined before invert so that invert can change its value
+    threshold_box = ttk.Spinbox(
+        ppw,
+        from_=0,
+        to=255,
+        format="%3.0f",
+    )
+
+    invert_var = tk.BooleanVar()
+    invert_var.set(preprocess_settings.invert)
+    invert_toggle = ttk.Checkbutton(
+        ppw,
+        text="Invert OCR text color",
+        variable=invert_var,
+        command=lambda: threshold_box.set(
+            preprocess_settings.bw_threshold
+            if not invert_var.get()
+            else preprocess_settings.inv_bw_threshold
+        ),
+    )
+    invert_toggle.grid(column=0, row=0, columnspan=2, sticky=tk.EW, padx=5, pady=5)
+    invert_toggle.var = invert_var
+
+    next_row = 1
+
+    def setup_row(label, field):
+        nonlocal next_row
+        label.grid(column=0, row=next_row, padx=5, pady=5, sticky=tk.W)
+        field.grid(column=1, row=next_row, padx=(0, 5), pady=5, sticky=tk.EW)
+        next_row += 1
+
+    threshold_box.set(
+        preprocess_settings.bw_threshold
+        if not preprocess_settings.invert
+        else preprocess_settings.inv_bw_threshold
+    )
+    setup_row(
+        ttk.Label(ppw, text="Threshold", justify=tk.LEFT, anchor="e"), threshold_box
+    )
+
+    resize_box = ttk.Spinbox(
+        ppw,
+        from_=0.5,
+        to=4,
+        increment=0.5,
+        format="%3.1f",
+    )
+    resize_box.set(preprocess_settings.resize_factor)
+    setup_row(
+        ttk.Label(ppw, text="Resize factor", justify=tk.LEFT, anchor="e"), resize_box
+    )
+
+    blur_box = ttk.Spinbox(
+        ppw,
+        from_=0,
+        to=5,
+        increment=0.5,
+        format="%3.1f",
+    )
+    blur_box.set(preprocess_settings.blur_size)
+    setup_row(ttk.Label(ppw, text="Blur size", justify=tk.LEFT, anchor="e"), blur_box)
+
+    minfilter_box = ttk.Spinbox(
+        ppw,
+        from_=1,
+        to=7,
+        increment=2,
+        format="%3.0f",
+    )
+    minfilter_box.set(preprocess_settings.minfilter_size)
+    setup_row(
+        ttk.Label(ppw, text="Minfilter size", justify=tk.LEFT, anchor="e"),
+        minfilter_box,
+    )
+
+    def apply_settings():
+        preprocess_settings.invert = invert_var.get()
+        if invert_var.get():
+            preprocess_settings.inv_bw_threshold = int(threshold_box.get())
+        else:
+            preprocess_settings.bw_threshold = int(threshold_box.get())
+        preprocess_settings.resize_factor = float(resize_box.get())
+        preprocess_settings.blur_size = float(blur_box.get())
+        preprocess_settings.minfilter_size = int(minfilter_box.get())
+        preprocess_settings.update_lut()
+
+    def dump_image():
+        apply_settings()
+        im = preprocess(ImageGrab.grab(get_coords()))
+        boxed_image = get_boxes(im, get_api())
+        boxed_image.save("dump.png")
+        boxed_image.show()
+
+    dumper_button = ttk.Button(ppw, text="Preview image", command=dump_image)
+    dumper_button.grid(
+        column=0, row=next_row, columnspan=2, sticky=tk.EW, padx=5, pady=5
+    )
+    next_row += 1
+    end_frame = ttk.Frame(ppw)
+    end_frame.grid(column=0, row=next_row, columnspan=2, sticky=tk.EW, pady=(0, 5))
+
+    def save_pp_settings():
+        apply_settings()
+        ppw.destroy()
+
+    def cancel_pp_settings():
+        preprocess_settings.invert = before_settings.invert
+        preprocess_settings.bw_threshold = before_settings.bw_threshold
+        preprocess_settings.inv_bw_threshold = before_settings.inv_bw_threshold
+        preprocess_settings.resize_factor = before_settings.resize_factor
+        preprocess_settings.blur_size = before_settings.blur_size
+        preprocess_settings.minfilter_size = before_settings.minfilter_size
+        preprocess_settings.update_lut()
+        ppw.destroy()
+
+    save_button = ttk.Button(end_frame, text="Save", command=save_pp_settings)
+    cancel_button = ttk.Button(end_frame, text="Cancel", command=cancel_pp_settings)
+    save_button.grid(column=0, row=0, sticky=tk.EW, padx=5)
+    cancel_button.grid(column=1, row=0, sticky=tk.EW, padx=(0, 5))
+    end_frame.columnconfigure(0, weight=7)
+    end_frame.columnconfigure(0, weight=3)
+
+
+preprocess_button = ttk.Button(
+    left_frame, text="Preprocessing settings", command=open_preprocess_settings
 )
-invert_text_toggle.pack(fill=tk.X)
-
-
-def dump_image():
-    im = preprocess(ImageGrab.grab(get_coords()), invert=invert_text_value.get())
-    boxed_image = get_boxes(im, get_api())
-    boxed_image.save("dump.png")
-    boxed_image.show()
-
-
-dumper_button = ttk.Button(left_frame, text="Dump read image", command=dump_image)
-dumper_button.pack(fill=tk.X)
+preprocess_button.pack(fill=tk.X)
 
 user_blacklist_string = ""
 
@@ -215,7 +337,7 @@ def ocr_task():
                 break
 
             area = get_coords()
-            im = preprocess(ImageGrab.grab(area), invert=invert_text_value.get())
+            im = preprocess(ImageGrab.grab(area))
             if loglevel <= logging.INFO:
                 im.save("debug.png")
             ocr_results = recognize_pokemon(im, api)
