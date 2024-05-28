@@ -171,7 +171,6 @@ def open_preprocess_settings():
         apply_settings()
         im = preprocess(ImageGrab.grab(get_coords()))
         boxed_image = get_boxes(im, get_api())
-        boxed_image.save("dump.png")
         threading.Thread(target=boxed_image.show).start()
 
     dumper_button = ttk.Button(ppw, text="Preview image", command=dump_image)
