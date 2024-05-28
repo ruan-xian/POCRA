@@ -6,21 +6,22 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
 import time
 import logging
-from os import path
 import threading
+import subprocess
 
 __all__ = ["click_pokemon", "focus_window", "close_window"]
 
 options = webdriver.ChromeOptions()
-p = path.abspath(path.join(path.dirname(__file__), "PokeRogue-Pokedex/index.html"))
+p = "https://ydarissep.github.io/PokeRogue-Pokedex"
 options.add_argument(f"--app={p}")
+options.add_experimental_option(
+    "excludeSwitches", ["enable-logging", "enable-automation"]
+)
 options.add_experimental_option("useAutomationExtension", False)
-options.add_experimental_option("excludeSwitches", ["enable-automation"])
-options.add_experimental_option("excludeSwitches", ["enable-logging"])
-options.add_argument("--log-level=3")
 
 svc = Service(ChromeDriverManager().install())
 svc.HideCommandPromptWindow = True
+svc.creation_flags = subprocess.CREATE_NO_WINDOW
 
 browser = webdriver.Chrome(service=svc, options=options)
 

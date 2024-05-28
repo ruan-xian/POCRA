@@ -6,7 +6,6 @@ datas += collect_data_files("sv_ttk")
 
 added_files = [
     ("pokemon_names.json", "."),
-    ("PokeRogue-Pokedex", "PokeRogue-Pokedex"),
 ]
 
 datas += added_files
