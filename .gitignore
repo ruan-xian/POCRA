@@ -1,5 +1,7 @@
 debug.png
-sample_out.png
+sample*.png
+samples
 dump.png
 dist
 build
+test_window.png
