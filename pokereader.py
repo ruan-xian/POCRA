@@ -42,9 +42,14 @@ class PreprocessSettings:
         self.inverted_lut = []
         self.update_lut()
 
+    def load_settings(self, settings):
+        self.__dict__ = settings
+
     def update_lut(self):
         self.lut = [0 if x > self.bw_threshold else 255 for x in range(256)]
-        inverted_lut = [0 if x < self.inv_bw_threshold else 255 for x in range(256)]
+        self.inverted_lut = [
+            0 if x < self.inv_bw_threshold else 255 for x in range(256)
+        ]
 
 
 preprocess_settings = PreprocessSettings(
@@ -72,7 +77,7 @@ def preprocess(image):
 
 
 SIMILARITY_THRESHOLD = 0.55
-BLACKLIST = ["Revive", "Ether", "Potion", "Super Potion", "Full Heal", "Lure"]
+BLACKLIST = ["Revive", "Ether", "Potion", "Super Potion", "Full Heal", "Lure", "eee"]
 
 user_blacklist = []
 

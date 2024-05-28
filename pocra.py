@@ -9,6 +9,8 @@ from tkinter import ttk
 import sv_ttk
 import threading
 from copy import copy
+import json
+import os
 
 loglevel = logging.WARNING
 
@@ -17,6 +19,13 @@ logging.basicConfig(
     level=loglevel,
 )
 
+settings = {}
+if os.path.exists("pocra_settings.json"):
+    with open("pocra_settings.json", "r") as f:
+        settings = json.load(f)
+if settings.get("preprocess_settings") is not None:
+    preprocess_settings.load_settings(settings["preprocess_settings"])
+    preprocess_settings.update_lut()
 
 ocr_initialized = False
 terminate = False
@@ -44,11 +53,22 @@ picker_button = ttk.Button(left_frame, text="Set OCR area", command=start_picker
 picker_button.pack(fill=tk.X)
 
 auto_open_value = tk.BooleanVar()
-auto_open_value.set(True)
+auto_open_value.set(settings.get("auto_open", True))
 auto_open_toggle = ttk.Checkbutton(
-    left_frame, text="Auto-open Pokedex", variable=auto_open_value
+    left_frame,
+    text="Auto-open Pokedex",
+    variable=auto_open_value,
 )
 auto_open_toggle.pack(fill=tk.X)
+
+pause_value = tk.BooleanVar()
+pause_value.set(False)
+pause_ocr_toggle = ttk.Checkbutton(
+    left_frame,
+    text="Pause OCR",
+    variable=pause_value,
+)
+pause_ocr_toggle.pack(fill=tk.X)
 
 
 def open_preprocess_settings():
@@ -152,7 +172,7 @@ def open_preprocess_settings():
         im = preprocess(ImageGrab.grab(get_coords()))
         boxed_image = get_boxes(im, get_api())
         boxed_image.save("dump.png")
-        boxed_image.show()
+        threading.Thread(target=boxed_image.show).start()
 
     dumper_button = ttk.Button(ppw, text="Preview image", command=dump_image)
     dumper_button.grid(
@@ -190,6 +210,8 @@ preprocess_button = ttk.Button(
 preprocess_button.pack(fill=tk.X)
 
 user_blacklist_string = ""
+if settings.get("user_blacklist") is not None:
+    user_blacklist_string = settings["user_blacklist"]
 
 
 def open_blacklist():
@@ -335,17 +357,17 @@ def ocr_task():
         while True:
             if terminate:
                 break
+            if not pause_value.get():
+                area = get_coords()
+                im = preprocess(ImageGrab.grab(area))
+                if loglevel <= logging.INFO:
+                    im.save("debug.png")
+                ocr_results = recognize_pokemon(im, api)
+                logging.info(ocr_results)
 
-            area = get_coords()
-            im = preprocess(ImageGrab.grab(area))
-            if loglevel <= logging.INFO:
-                im.save("debug.png")
-            ocr_results = recognize_pokemon(im, api)
-            logging.info(ocr_results)
-
-            ocr_text = "\n".join(
-                [f"{r[0][1]} ({(int)(r[0][0]*100)}%)" for r in ocr_results]
-            )
+                ocr_text = "\n".join(
+                    [f"{r[0][1]} ({(int)(r[0][0]*100)}%)" for r in ocr_results]
+                )
             time.sleep(2)
 
 
@@ -359,6 +381,11 @@ def end():
     logging.info("Terminating")
     root.destroy()
     close_window()
+    settings.update({"auto_open": auto_open_value.get()})
+    settings.update({"preprocess_settings": vars(preprocess_settings)})
+    settings.update({"user_blacklist": user_blacklist_string})
+    with open("pocra_settings.json", "w") as f:
+        json.dump(settings, f)
 
 
 def periodic_update():
