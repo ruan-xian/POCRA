@@ -68,22 +68,27 @@ def init_task():
 t = threading.Thread(target=init_task)
 t.start()
 
+translation_dict = {ord(c): None for c in "♀♂:'."}
+translation_dict.update({ord("é"): "e", ord("-"): " "})
+
 
 def click_pokemon(name):
     while not initialized:
         time.sleep(0.5)
+
+    cleaned_name = name.translate(translation_dict)
 
     webdriver.ActionChains(browser).send_keys(Keys.ESCAPE).perform()
 
     wait_for_element(speciesButton)
     speciesButton.click()
 
-    logging.info(f"Searching for {name}")
+    logging.info(f"Searching for {cleaned_name}")
     wait_for_element(searchbar)
     searchbar.clear()
-    searchbar.send_keys(name)
+    searchbar.send_keys(cleaned_name)
 
-    processed_name = name.upper().replace(" ", "_")
+    processed_name = cleaned_name.upper().replace(" ", "_")
     logging.debug(f"Searching for {processed_name}")
     row = None
 
@@ -95,7 +100,7 @@ def click_pokemon(name):
             break
         except NoSuchElementException:
             if tries >= MAX_TRIES:
-                logging.error(f"Could not find {name}")
+                logging.error(f"Could not find {cleaned_name}")
                 return
             tries += 1
             time.sleep(0.1)
