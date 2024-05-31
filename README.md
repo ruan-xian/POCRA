@@ -23,7 +23,6 @@ Pokemon will have its Pokedex entry automatically opened, but you can switch to 
 ![image](https://github.com/ruan-xian/POCRA/assets/55116848/33f2dbe5-40a2-4cf4-a9b3-5b586d24eb3b)
 
 ## Customization
-
 If the OCR is not particularly accurate for your resolution or graphical settings, you can attempt to fine-tune the image preprocessing to try to improve your results.
 Clicking "Preprocessing settings" will open a series of options:
 - Invert OCR text color: By default, this app expects light text on a dark background. If you are playing on the Legacy UI theme (dark text on a light background), you should check this box.
@@ -33,5 +32,13 @@ note that if you use the invert option, the threshold should be different.
 - Blur size: How much blur to apply to the image. Probably OK at 0, but the option is here for legacy purposes.
 - Minfilter size: How much to "thicken" the pixels in the image. This has a large effect on the resulting text detection quality.
 - Preview image: View an annotated screenshot showing what the application "sees" and what it interpreted the output as, according to the current preprocessing settings.
-
 ## Blacklisting
+POCRA supports a user blacklist to exclude terms from being recognized as valid Pokemon. This is useful when you don't want to, for example, recognize Pokemon in your team, or a term commonly gets interpreted as a Pokemon when it is not (like S.ATK being read as Sawk). You can press the "Blacklist" button under a Pokemon's button in the Detection Results box to add that Pokemon's name to the blacklist (*not* the recognized text), or you can press "Edit Blacklist" to manually edit the blacklist. Enter your terms one per line.
+
+After the blacklist is set, any text that matches a blacklist term as well as (or better than) any Pokemon will be discarded. 
+## Other notes
+- All settings are saved when the app is exited in `pocra_settings.json`
+- POCRA may fail to recognize or open the proper pages for mega evolutions and gigantamax Pokemon
+- POCRA will not account for regional variations
+- An internet connection *is* required to use POCRA (to load the Pokedex page)
+
