@@ -211,6 +211,7 @@ preprocess_button.pack(fill=tk.X)
 user_blacklist_string = ""
 if settings.get("user_blacklist") is not None:
     user_blacklist_string = settings["user_blacklist"]
+    process_user_blacklist(user_blacklist_string)
 
 
 def open_blacklist():
