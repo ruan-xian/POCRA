@@ -164,7 +164,7 @@ def get_boxes(image, api):
 
 
 def get_api():
-    api = PyTessBaseAPI(r"C:\Program Files\Tesseract-OCR\tessdata", psm=PSM.SPARSE_TEXT)
+    api = PyTessBaseAPI(path.dirname(__file__), psm=PSM.SPARSE_TEXT)
     api.SetVariable(
         "tessedit_char_whitelist",
         charset_string,

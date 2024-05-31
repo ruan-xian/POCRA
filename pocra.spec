@@ -6,6 +6,7 @@ datas += collect_data_files("sv_ttk")
 
 added_files = [
     ("pokemon_names.json", "."),
+    ("eng.traineddata", ".")
 ]
 
 datas += added_files
