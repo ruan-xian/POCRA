@@ -1,5 +1,5 @@
 # Pokerogue OCR Assistant (POCRA)
-Tired of looking up Pokemon and their abilities or consulting a type effectiveness chart? POCRA scans your screen, recognizes the Pokemon you're fighting, and automatically opens the 
+Tired of looking up Pokemon and their abilities or consulting a type effectiveness chart? POCRA scans your screen with OCR (Optical Character Recognition), recognizes the Pokemon you're fighting, and automatically opens the 
 Ydarissep Pokedex page for that Pokemon. 
 ## Installation
 Download the latest version for Windows [here](https://github.com/ruan-xian/POCRA/releases/tag/v1.0), unzip the folder, and run `pocra.exe` to open the app.
